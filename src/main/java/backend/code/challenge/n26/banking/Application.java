@@ -21,7 +21,7 @@ public class Application
 		  try {
 
 			ip = InetAddress.getLocalHost();
-			System.out.println("Application Started in the IP Address : " + ip.getHostAddress());
+			System.out.println("Application Started in the IP Address  : " + ip.getHostAddress());
 
 		  } catch (UnknownHostException e) {
 
