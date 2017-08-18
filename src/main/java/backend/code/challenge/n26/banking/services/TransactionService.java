@@ -1,15 +1,17 @@
 package backend.code.challenge.n26.banking.services;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import backend.code.challenge.n26.banking.entity.Transaction;
 
 @Component
 public class TransactionService {
-	final static Logger logger = Logger.getLogger(TransactionService.class);
+	private final static Logger logger = LoggerFactory.getLogger(TransactionService.class);
 	
-	public void addTransactionIfTimeIsLastSixtySeconds(Transaction transaction) {
+	public void addTransaction(Transaction transaction) {
 		logger.info("Input : "+transaction);
 	}
 

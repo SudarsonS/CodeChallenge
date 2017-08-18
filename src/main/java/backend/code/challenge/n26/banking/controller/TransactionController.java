@@ -20,8 +20,8 @@ public class TransactionController {
 	private TransactionService transactionService;
 	
 	@RequestMapping(value={"/transactions"}, method=RequestMethod.POST)
-    public ResponseEntity<Transaction> addTransactionIfTimeIsLastSixtySeconds(@RequestBody Transaction transaction) {
-        transactionService.addTransactionIfTimeIsLastSixtySeconds(transaction);
+    public ResponseEntity<Transaction> addTransaction(@RequestBody Transaction transaction) {
+        transactionService.addTransaction(transaction);
         return new ResponseEntity<Transaction>(new Transaction(),HttpStatus.CREATED);
     }
 }

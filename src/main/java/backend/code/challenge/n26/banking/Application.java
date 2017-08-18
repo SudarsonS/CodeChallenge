@@ -1,10 +1,10 @@
 package backend.code.challenge.n26.banking;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
+import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 
 /**
  * For Starting the Rest
@@ -14,19 +14,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Application 
 {
+	final static Logger logger = Logger.getLogger(Application.class);
     public static void main( String[] args )
     {
     	SpringApplication.run(Application.class, args);
-    	InetAddress ip;
-		  try {
-
-			ip = InetAddress.getLocalHost();
-			System.out.println("Application Started in the IP Address  : " + ip.getHostAddress());
-
-		  } catch (UnknownHostException e) {
-
-			e.printStackTrace();
-
-		  }
     }
 }
