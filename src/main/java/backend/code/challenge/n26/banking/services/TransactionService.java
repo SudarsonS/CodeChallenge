@@ -3,6 +3,7 @@ package backend.code.challenge.n26.banking.services;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 import javax.annotation.PostConstruct;
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import backend.code.challenge.n26.banking.entity.Statistics;
 import backend.code.challenge.n26.banking.entity.Transaction;
+import backend.code.challenge.n26.banking.util.Util;
 
 @Component
 public class TransactionService {
@@ -22,14 +24,18 @@ public class TransactionService {
 	@PostConstruct
 	public void initialize() {
 		logger.info("Initializing statistics list");
+		Calendar cal = Calendar.getInstance();
+		
 		for(int i=0; i< 60; i++){ 
-			statisticsList.add(new Statistics());
+			cal.set(Calendar.SECOND, i);
+			cal.set(Calendar.MILLISECOND, 0);
+			statisticsList.add(new Statistics(0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 0.0, 0.0, cal.getTimeInMillis()));
 		}
-    }
-	
+	}
+
 	public synchronized void addTransaction(Transaction transaction) {
-			logger.info("Transaction is less than 60 seconds");
-			updateStatisticsList(transaction);
+		logger.info("Transaction is less than 60 seconds");
+		updateStatisticsList(transaction);
 	}
 
 	/**
@@ -42,26 +48,25 @@ public class TransactionService {
 	 * @param transaction
 	 */
 	private void updateStatisticsList(Transaction transaction) {
-		String time[] = getTimeFromMilliseconds(transaction.getTimestamp()).split(":");
-		int mins = Integer.parseInt(time[1]);
-		int seconds = Integer.parseInt(time[2]);
-		if(seconds >=0 && seconds <=59){ //Additional Check
-			Statistics stats = statisticsList.get(seconds);
-			String oldUpdatedTime[] = getTimeFromMilliseconds(stats.getTime()).split(":");
-			int oldUpdatedMins = Integer.parseInt(oldUpdatedTime[1]);
-			int oldUpdatedSeconds = Integer.parseInt(oldUpdatedTime[2]); 
-			compareTime(mins, seconds, oldUpdatedMins, oldUpdatedSeconds, stats, transaction);
-		}
+		Calendar time = Util.getTimeFromMilliseconds(transaction.getTimestamp());
+		int mins = time.get(Calendar.MINUTE);
+		int seconds = time.get(Calendar.SECOND);
+		Statistics stats = statisticsList.get(seconds);
+		Calendar oldUpdatedTime = Util.getTimeFromMilliseconds(stats.getTime());
+		logger.info("Time :::: {} :::: {}", new Date(time.getTimeInMillis()), new Date(oldUpdatedTime.getTimeInMillis()));
+		compareTime(mins, seconds, oldUpdatedTime.get(Calendar.MINUTE), oldUpdatedTime.get(Calendar.SECOND), stats, transaction);
 	}
 
 	private void compareTime(int mins, int seconds, int oldUpdatedMins, int oldUpdatedSeconds, Statistics stats, Transaction transaction) {
+		logger.info("Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
 		if(mins == oldUpdatedMins && seconds == oldUpdatedSeconds){
-			logger.info("Transaction Time is same with the last updated time");
+			logger.info("Transaction Time is same with the last updated time, Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
 			updateStats(stats, transaction);
 		}else if (mins > oldUpdatedMins){
-			logger.info("Transaction Time is greater than with the last updated time");
+			logger.info("Transaction Time is greater than with the last updated time, Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
 			resetOldStatsToNew(stats, transaction);
 		}
+		logger.info("goint out compare time");
 	}
 
 	/**
@@ -76,7 +81,7 @@ public class TransactionService {
 		stats.setSum(transaction.getAmount());
 		stats.setTime(transaction.getTimestamp());
 		stats.setAverage(transaction.getAmount()/stats.getCount());
-		logger.info("Reseted Stats : "+stats);
+		logger.info("Reseted Stats : {} ",stats);
 	}
 
 	/**
@@ -96,31 +101,7 @@ public class TransactionService {
 		if(transaction.getAmount() < stats.getMinimum()){
 			stats.setMinimum(transaction.getAmount());
 		}
-		logger.info("Updated Stats: "+stats);
-	}
-
-	/**
-	 * Check whether transaction time is less than 60 seconds
-	 * @param timestamp
-	 * @return
-	 */
-	public boolean isLessThan60Seconds(long timestamp) {
-		Calendar calendar = Calendar.getInstance();
-		if(calendar.getTimeInMillis() - timestamp <= 60000L){
-			 return true;
-		 }
-		return false;
-	}
-
-	/**
-	 * Getting Hours, Minutes, Seconds from Milliseconds
-	 * @param timestamp
-	 * @return
-	 */
-	private String getTimeFromMilliseconds(long timestamp) {
-		 Calendar calendar = Calendar.getInstance();
-		 calendar.setTimeInMillis(timestamp);
-		 return calendar.get(Calendar.HOUR_OF_DAY)+":"+calendar.get(Calendar.MINUTE)+":"+calendar.get(Calendar.SECOND);
+		logger.info("Updated Stats: {}",stats);
 	}
 
 	/**
@@ -130,11 +111,12 @@ public class TransactionService {
 	 * @return
 	 */
 	public synchronized Statistics getOverallStatistics() {
-		Statistics overallStats = new Statistics();
+		Statistics overallStats = new Statistics(0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 0.0, 0.0, System.currentTimeMillis());
 		for (int i=0; i<60; i++){
 			Statistics stats = statisticsList.get(i);
 			calculateStats(overallStats, stats);
 		}
+		logger.info("Overall Statistics : {}", overallStats);
 		return overallStats;
 	}
 
@@ -156,24 +138,23 @@ public class TransactionService {
 			overallStats.setMinimum(stats.getMinimum());
 		}
 		overallStats.setTime(System.currentTimeMillis());
-		logger.info("Overall Statistics : "+ overallStats);
 	}
 
 	/**
 	 * Every nth second, nth stats is checked
 	 * If the value is older than 60 seconds, nth stats is rest to zero
+	 * 
 	 */
 	@Scheduled(fixedDelay=1000)
 	public synchronized void removeTheOldStats() {
-		String currentTime = getTimeFromMilliseconds(System.currentTimeMillis());
-		int min = Integer.parseInt(currentTime.split(":")[1]);
-		int sec = Integer.parseInt(currentTime.split(":")[2]);
-		if(sec >=0 && sec <=59){ //Additional Check
-			Statistics stats = statisticsList.get(sec);
-			int statsMin = Integer.parseInt(getTimeFromMilliseconds(stats.getTime()).split(":")[1]);
-			if(statsMin < min){
-				resetStatsToZero(stats);
-			}
+		//calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),calendar.get(Calendar.SECOND)
+		Calendar currentTime = Util.getTimeFromMilliseconds(System.currentTimeMillis());
+		int min = currentTime.get(Calendar.MINUTE);
+		int sec = currentTime.get(Calendar.SECOND);
+		Statistics stats = statisticsList.get(sec);
+		Calendar statsMin = Util.getTimeFromMilliseconds(stats.getTime());
+		if(statsMin.get(Calendar.MINUTE) < min){
+			resetStatsToZero(stats, sec);
 		}
 	}
 
@@ -181,12 +162,15 @@ public class TransactionService {
 	 * If the stats time is lesser than 60 seconds, reset to zero
 	 * @param stats
 	 */
-	private void resetStatsToZero(Statistics stats) {
+	private void resetStatsToZero(Statistics stats, int sec) {
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.SECOND, sec);
+		cal.set(Calendar.MILLISECOND, 0);
 		stats.setCount(0);
 		stats.setAverage(0.0);
-		stats.setMaximum(0.0);
-		stats.setMinimum(0.0);
-		stats.setTime(0L);
+		stats.setMaximum(Double.NEGATIVE_INFINITY);
+		stats.setMinimum(Double.POSITIVE_INFINITY);
+		stats.setTime(cal.getTimeInMillis());
 		stats.setSum(0.0);	
 	}
 }

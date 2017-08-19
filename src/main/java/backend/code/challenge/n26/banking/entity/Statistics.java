@@ -1,12 +1,23 @@
 package backend.code.challenge.n26.banking.entity;
 
 public class Statistics {
-	private volatile int count = 0;
-	private volatile double minimum = 0.0;
-	private volatile double maximum = 0.0;
-	private volatile double average = 0.0;
-	private volatile double sum = 0.0;
-	private volatile long time = 0L;
+	private volatile int count;
+	private volatile double minimum;
+	private volatile double maximum;
+	private volatile double average;
+	private volatile double sum;
+	private volatile long time;
+	
+	
+	public Statistics(int count, double minimum, double maximum, double average, double sum, long time) {
+		super();
+		this.count = count;
+		this.minimum = minimum;
+		this.maximum = maximum;
+		this.average = average;
+		this.sum = sum;
+		this.time = time;
+	}
 	
 	public int getCount() {
 		return count;

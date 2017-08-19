@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import backend.code.challenge.n26.banking.entity.Statistics;
 import backend.code.challenge.n26.banking.entity.Transaction;
 import backend.code.challenge.n26.banking.services.TransactionService;
+import backend.code.challenge.n26.banking.util.Util;
 
 @RestController
 @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -21,17 +22,16 @@ public class TransactionController {
 	private TransactionService transactionService;
 	
 	@RequestMapping(value={"/transactions"}, method=RequestMethod.POST)
-    public ResponseEntity<Transaction> addTransaction(@RequestBody Transaction transaction) {
-		if(transaction != null){
-			if(transactionService.isLessThan60Seconds(transaction.getTimestamp())){
-				transactionService.addTransaction(transaction);
-				return new ResponseEntity<Transaction>(new Transaction(),HttpStatus.CREATED); //201 status code
-			}else{
-				return new ResponseEntity<Transaction>(new Transaction(),HttpStatus.NO_CONTENT); //204 status code
-			}
-		}else{
-			return new ResponseEntity<Transaction>(new Transaction(),HttpStatus.BAD_REQUEST); //400 status code
+    public ResponseEntity addTransaction(@RequestBody Transaction transaction) {
+		if(transaction == null || Util.isFutureTime(transaction.getTimestamp())){
+			return new ResponseEntity(HttpStatus.BAD_REQUEST); //400 status code
 		}
+			if(Util.isLessThan60Seconds(transaction.getTimestamp())){
+				transactionService.addTransaction(transaction);
+				return new ResponseEntity(HttpStatus.CREATED); //201 status code
+			}else{
+				return new ResponseEntity(HttpStatus.NO_CONTENT); //204 status code
+			}
     }
 	
 	@RequestMapping(value={"/statistics"}, method=RequestMethod.GET)
