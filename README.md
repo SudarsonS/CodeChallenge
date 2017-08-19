@@ -32,7 +32,7 @@ Maven Project
   * `services` package contains Business logic
   * `util` package contains helper functions
   
-##API Documentation
+## API Documentation
 
 There are two endpoints \transactions and \statistics.
 
