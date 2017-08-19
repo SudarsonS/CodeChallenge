@@ -33,6 +33,7 @@ Maven Project
   * `util` package contains helper functions
   
 ##API Documentation
+
 There are two endpoints \transactions and \statistics.
 
 #### Transactions
