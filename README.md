@@ -29,5 +29,5 @@ Maven Project
 * `banking` package to hold everything.
   * `controller` package contains API Endpoints for getting statistics (\statistics) and adding transaction (\transactions)
   * `entity` package contains Models (Statistics and Transaction) 
-  * `services` Business logic
+  * `services` package contains Business logic
   * `util` package contains helper functions
