@@ -41,32 +41,29 @@ public class TransactionService {
 	/**
 	 * ArrayList is initialized with 60 Statistics Objects
 	 * Each Object represents each seconds from 0 to 59 (i.e.) statisticsList.get(1) represents 1st second, statisticsList.get(2) represents 2nd second and so on
-	 * Second value for the transaction time is calculated and Statistics object for that second value is retrieved.
-	 * If the time from the last updated stats is equal to the transaction time (Minutes & seconds), the stats is updated
-	 * otherwise if the Minutes is larger, then the stats is reset with the transaction values
-	 * Transaction Time (Minutes) smaller than the stats time is not taken into consideration (only less than 60 seconds)
+	 * Transaction time 'seconds' value is calculated and Statistics object for that 'seconds' value is retrieved.
+	 * If the time from the last updated stats is less than 60 seconds to the transaction time, the stats is updated
+	 * otherwise if it is greater than 1 minute, then the stats is reset with the transaction values
+	 * Transaction Time smaller than the stats time is not taken into consideration (only less than 60 seconds)
 	 * @param transaction
 	 */
 	private void updateStatisticsList(Transaction transaction) {
 		Calendar time = Util.getTimeFromMilliseconds(transaction.getTimestamp());
-		int mins = time.get(Calendar.MINUTE);
-		int seconds = time.get(Calendar.SECOND);
-		Statistics stats = statisticsList.get(seconds);
+		Statistics stats = statisticsList.get(time.get(Calendar.SECOND));
 		Calendar oldUpdatedTime = Util.getTimeFromMilliseconds(stats.getTime());
-		logger.info("Time :::: {} :::: {}", new Date(time.getTimeInMillis()), new Date(oldUpdatedTime.getTimeInMillis()));
-		compareTime(mins, seconds, oldUpdatedTime.get(Calendar.MINUTE), oldUpdatedTime.get(Calendar.SECOND), stats, transaction);
+		logger.debug("Time :::: {} :::: {}", new Date(time.getTimeInMillis()), new Date(oldUpdatedTime.getTimeInMillis()));
+		compareTime(time, oldUpdatedTime, stats, transaction);
 	}
 
-	private void compareTime(int mins, int seconds, int oldUpdatedMins, int oldUpdatedSeconds, Statistics stats, Transaction transaction) {
-		logger.info("Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
-		if(mins == oldUpdatedMins && seconds == oldUpdatedSeconds){
-			logger.info("Transaction Time is same with the last updated time, Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
+	private void compareTime(Calendar time, Calendar oldUpdatedTime, Statistics stats, Transaction transaction) {
+		Calendar transactionTime = Util.removeMillisecondsFromTime(time);
+		Calendar updatedTime = Util.removeMillisecondsFromTime(oldUpdatedTime);
+		logger.debug("Time CompareTime :::: {} :::: {}", new Date(time.getTimeInMillis()), new Date(updatedTime.getTimeInMillis()));
+		if(Util.isLessThan60Seconds(transactionTime.getTimeInMillis())){
 			updateStats(stats, transaction);
-		}else if (mins > oldUpdatedMins){
-			logger.info("Transaction Time is greater than with the last updated time, Transaction Time = {}:{}, LastUpdated Time = {}:{}", mins, seconds, oldUpdatedMins, oldUpdatedSeconds);
+		}else if ((transactionTime.getTimeInMillis() - updatedTime.getTimeInMillis()) > 60000L){
 			resetOldStatsToNew(stats, transaction);
 		}
-		logger.info("goint out compare time");
 	}
 
 	/**
@@ -149,11 +146,12 @@ public class TransactionService {
 	public synchronized void removeTheOldStats() {
 		//calendar.get(Calendar.HOUR_OF_DAY),calendar.get(Calendar.MINUTE),calendar.get(Calendar.SECOND)
 		Calendar currentTime = Util.getTimeFromMilliseconds(System.currentTimeMillis());
-		int min = currentTime.get(Calendar.MINUTE);
+		currentTime = Util.removeMillisecondsFromTime(currentTime);
 		int sec = currentTime.get(Calendar.SECOND);
 		Statistics stats = statisticsList.get(sec);
-		Calendar statsMin = Util.getTimeFromMilliseconds(stats.getTime());
-		if(statsMin.get(Calendar.MINUTE) < min){
+		Calendar statsTime = Util.getTimeFromMilliseconds(stats.getTime());
+		statsTime = Util.removeMillisecondsFromTime(statsTime);
+		if((currentTime.getTimeInMillis() - statsTime.getTimeInMillis()) > 60000L){
 			resetStatsToZero(stats, sec);
 		}
 	}

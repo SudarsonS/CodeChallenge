@@ -35,4 +35,14 @@ public class Util {
 		 calendar.setTimeInMillis(timestamp);
 		 return calendar;
 	}
+	
+	/**
+	 * Removing Milliseconds from Time
+	 * @param cal
+	 * @return
+	 */
+	public static Calendar removeMillisecondsFromTime(Calendar cal){
+		  cal.set(Calendar.MILLISECOND, 0);
+		  return cal;
+	  }
 }

@@ -60,7 +60,7 @@ public class TransactionServiceTest {
         transactionService.addTransaction(transaction);
         
         transaction.setAmount(35.0D);
-        transaction.setTimestamp(System.currentTimeMillis()-46000L);
+        transaction.setTimestamp(System.currentTimeMillis()-58000L);
         transactionService.addTransaction(transaction);
 
         Statistics overallStatistics = transactionService.getOverallStatistics();
