@@ -1,4 +1,5 @@
 # CodeChallenge
+
 A simple REST application to calculate the statistics of last 60 seconds transactions.
 
 ## How to run the project? 
